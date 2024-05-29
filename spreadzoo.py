@@ -13,89 +13,72 @@ from utils import (process_spot_data,
                    plot_axis)
 
 ''' effective spread'''
-def json_to_df(quote_data:dict):
-    # result: same as csv: columns = time,market,level,coin_metrics_id,database_time,
-    # ask_price,ask_size,bid_price,bid_size
-    # convert to pd.DataFrame:
-    del quote_data['market'],quote_data['ask'],quote_data['bid']
-    quote_data_dict = {}
-    for key, value in quote_data.items():
-       
-        dfs = []
-        for i in range(len(value)):
-            df = pd.DataFrame()
-            df[['ask_price', 'ask_size']] = pd.DataFrame(value[i]['asks']).astype(float).values
-            df[['bid_price', 'bid_size']] = pd.DataFrame(value[i]['bids']).astype(float).values
-            df['level'] = [f'level_{j+1}' for j in range(100)]
-            df.loc[:,'time'] = value[i]['time']
-            df.loc[:,'market'] = value[i]['market']
-            df.loc[:,'coin_metrics_id'] = value[i]['coin_metrics_id']
-            df.loc[:,'database_time'] = value[i]['database_time']
-            
-            dfs.append(df)
-        if len(dfs) == 0:
-            quote_data_dict[key] = dfs
-            print('market order data is null on '+ key)
-        else:
-            quote_data_daily = pd.concat(dfs, axis=0)
-            quote_data_daily = quote_data_daily[['time','market','level','coin_metrics_id','database_time',
-            'ask_price','ask_size','bid_price','bid_size']]
-            
-            quote_data_dict[key] = quote_data_daily
-    print('quote_data for '+key+ ' has been processed')
-        
-    return quote_data_dict
-
+def save_data(data, output_file):
     
-def plot_espread(espread:pd.DataFrame, mark_date:str, market_name: str, start_date:str):
-    # plot effective spread
-    espread = espread[espread.index>=pd.to_datetime(start_date)]
-    dates = espread.index
-    espreads = espread['espread'].values*10000
-    plot_info = {
-        "1":{
-        "X":dates,
-        "Y":espreads,
-        "type":"line",
-        "label":"espread(bps)",
-        "ylabel":"espread(bps)",
-        "legend":['espread(bps)'],
-        "xticks":dates[::5],
-        "xticklabels":[
-            dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
-        ],
-        "axvline":pd.to_datetime(mark_date)}
-    }
-    title = 'espread(bps) for' + market_name
-    outputdir = "../figures/espread/"
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
+    output_dir = output_file.parent
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    data.to_csv(output_file)
     
-    plot_axis(plot_info, title, outputdir, file_type='png', fontsize=20)
-
-
+    
 # calculate spread and plot
 # data processing
 class SpreadZoo:
-    def __init__(self, start_date, mark_date, order_number:int):
+    def __init__(self, start_date, mark_date, level_number:int):
         self.start_date = start_date
         self.mark_date = mark_date
-        self.order_number = order_number
+        self.level_number = level_number
+        
+        
+    def json_to_dfs(self, quote_data:dict):
+        # result: same as csv: columns = time,market,level,coin_metrics_id,database_time,
+        # ask_price,ask_size,bid_price,bid_size
+        # convert to pd.DataFrame:
+        del quote_data['market'],quote_data['ask'],quote_data['bid']
+        quote_data_dict = {}
+        
+        for date in quote_data:
+            mid_quotes = []
+            for i in range(self.level_number):
+                midquote_temp = [{'time': item['time'], 
+                                'mid_quote': (float(item['asks'][i]['price']) + float(item['bids'][i]['price']))/2,
+                                'ask_price': float(item['asks'][i]['price']),
+                                'ask_size': float(item['asks'][i]['size']),         
+                                'bid_price': float(item['bids'][i]['price']),
+                                'bid_size': float(item['bids'][i]['size']),
+                                'level': 'level_{}'.format(str(i+1))
+                                }
+                            for item in quote_data[date]]
+                mid_quotes.extend(midquote_temp)
+
+            mid_quotes = pd.DataFrame(mid_quotes)
+            mid_quotes['date'] = mid_quotes['time'].apply(lambda x: x[:10])
+            mid_quotes['time'] = mid_quotes['time'].apply(lambda x: x[11:19])
+
+            mid_quotes['timestamp'] = pd.to_datetime(mid_quotes['date'].astype(str) + ' ' + mid_quotes['time'])
+            mid_quotes = mid_quotes[['timestamp', 'ask_price', 'ask_size','bid_price', 'bid_size','mid_quote']]
+            mid_quotes.columns = ['time', 'ask_price', 'ask_size','bid_price', 'bid_size','mid_quote']
+        
+            quote_data_dict[date] = mid_quotes.sort_values(by = 'timestamp')
+            
+        print('quote_data for '+date+ ' has been processed')
+        
+        return quote_data_dict
 
     def load_from_json(self, json_file):
         if os.path.exists(json_file):
             with open(json_file) as f:
                 data_quote = json.load(f)
-            return  json_to_df(data_quote)
+            return self.json_to_dfs(data_quote)
         else:
             return None
     
-    def price_weighted_quotes(self, market_name, quote_data, num_level):
-        level_list = ['level_{}'.format(i) for i in range(num_level)]
-        filtered_quotes = quote_data[quote_data['level'].isin(level_list)]
+    def price_weighted_quotes(self, quote_data):
+        # level_list = ['level_{}'.format(i) for i in range(self.level_number)]
+        # filtered_quotes = quote_data[quote_data['level'].isin(level_list)]
         
-        ask_prices = filtered_quotes.pivot(index = 'time', columns = 'level', values = 'ask')
-        bid_prices = filtered_quotes.pivot(index = 'time', columns = 'level', values = 'bid')
+        ask_prices = quote_data.pivot(index = 'time', columns = 'level', values = 'ask')
+        bid_prices = quote_data.pivot(index = 'time', columns = 'level', values = 'bid')
         
         def weighted_avg(row):
             values = row.values
@@ -108,26 +91,20 @@ class SpreadZoo:
         bid_prices['weighted_bid'] = bid_prices.apply(weighted_avg, axis = 1)
         
         weighted_quotes = pd.concat([ask_prices[['weighted_ask']], bid_prices[['weighted_bid']]], axis = 1)
-        weighted_quotes['weighted_mid'] = weighted_quotes.mean(axis = 1).values
-        
-        if not os.path.exists('../result/data/weighted_quotes/'):
-            os.makedirs('../result/data/weighted_quotes/')
-        weighted_quotes.to_csv('../result/data/weighted_quotes/'+market_name+'-weighted_quotes_'+str(num_level)+'_levels.csv')
+        weighted_quotes['weighted_mid'] = weighted_quotes.mean(axis = 1)
+        weighted_quotes.columns = ['ask_price', 'bid_price', 'mid_quote']
         
         return weighted_quotes
     
-    @staticmethod
-    def match_spot_quote(spot_data:pd.DataFrame, quote_data:pd.DataFrame, order_level:str):
+    
+    def match_spot_quote(self, spot_data:pd.DataFrame, quote_data:pd.DataFrame):
         # match the time stamp for spot data and quotes
         # spot_data: processed, time, amount, price, side
         # quote_data: market order data, 10s
         if len(quote_data) == 0:
             merged_data = pd.DataFrame()
         else:
-            quote_data = quote_data[quote_data['level'] == order_level]
-            # get mean of level 1 to level 5
-            # quote_data = quote_data[quote_data['level'].isin(['level_1','level_2','level_3','level_4','level_5'])]
-            # TODO: DEBUG merge code
+            quote_data = self.price_weighted_quotes(quote_data)
 
             if 'time' in quote_data.columns:
                 quote_data = quote_data.set_index('time')
@@ -135,35 +112,36 @@ class SpreadZoo:
             if quote_data.index.tz is not None:
                 quote_data.index = quote_data.index.tz_localize(None)
             
-            quote_data['mid_quote'] = (quote_data['ask_price']+quote_data['bid_price'])/2 # mid-quotes
             merged_data = pd.merge_asof(spot_data[['amount', 'price', 'side']], quote_data[['mid_quote']], 
                                         left_index=True, right_index=True, direction='backward') # match timestamp (earlier and nearest)
             merged_data['side'] = merged_data['side'].replace(0,-1) # buy side ==1, sell side == -1
         
         return merged_data
     
-    def plot_spread(self, espread:pd.DataFrame, market_name: str, output_dir='../figures/espread/'):
-        espread = espread[espread.index>=pd.to_datetime(self.start_date)]
-        dates = espread.index
-        espreads = espread['espread'].values * 10000
+    def plot_spread(self, spread:pd.DataFrame, market_name: str, output_dir='../figures/spread/'):
+        spread = spread[spread.index>=pd.to_datetime(self.start_date)]
+        dates = spread.index
+        spread_name = spread.columns[0]
+        spreads = spread[spread_name].values * 10000
         plot_info = {
             "1":{
             "X":dates,
-            "Y":espreads,
+            "Y":spreads,
             "type":"line",
-            "label":"espread(bps)",
-            "ylabel":"espread(bps)",
-            "legend":['espread(bps)'],
+            "label": spread_name+ "(bps)",
+            "ylabel": spread_name+"spread(bps)",
+            "legend":[spread_name+'(bps)'],
             "xticks":dates[::5],
             "xticklabels":[
                 dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
             ],
             "axvline":pd.to_datetime(self.mark_date)}
         }
-        title = 'espread(bps) for' + market_name
+        title = spread_name+'(bps) for' + market_name
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
+
 
 
 class ESpread(SpreadZoo):
@@ -185,7 +163,7 @@ class ESpread(SpreadZoo):
                 if weight:
                     espread = merged_data.resample('D').apply(amount_weighted_average)
                 else:
-                    espread = merged_data.resample('D').mean()
+                    espread = merged_data['espread'].resample('D').mean()
                 espread = pd.DataFrame(espread)
             else:
                 espread = merged_data[['espread']]
@@ -200,54 +178,219 @@ class ESpread(SpreadZoo):
         for date in month_spot['date'].unique():
             date_spot = month_spot[month_spot['date'] == date]
             date_quote = date_quote_dict[date]
-            date_merge = self.match_spot_quote(date_spot, date_quote, str(self.order_number))
+            date_merge = self.match_spot_quote(date_spot, date_quote)
             date_espread = self.cal_espread(date_merge)  
             espread_dfs.append(date_espread)
         return espread_dfs
     
-    def run(self, csv_file, json_name_template, output_file='../result/espread.csv'):
-        # spot data
-        market_spot = pd.read_csv(csv_file)
-        market_spot = process_spot_data(market_spot)
-        market_spot['month'] =  market_spot.index.strftime('%Y_%m')
-        market_spot['month'] = market_spot['month'].apply(month_format)
-        market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
-        month_list = market_spot['month'].unique()
+    def run(self, csv_file, json_name_template, output_file='../result/espread.csv',merged_data= None):
         
-        espread_dfs = []
-        for month in month_list:
-            month_spot = market_spot[market_spot['month'] ==month]
-            json_file = json_name_template.format(month=month)
-            data = self.integrate_singlemonth_spread(month_spot, json_file)
-            if data is None:
-                continue
-            espread_dfs.extend(data)
-            print('espread for '+month+' has been calculated')
-        print("all done.")
-        market_espread = pd.concat(espread_dfs, axis = 0)
+        if merged_data is not None:
+            market_espread = self.cal_espread(merged_data)
+        else:
+            # spot data
+            market_spot = pd.read_csv(csv_file)
+            market_spot = process_spot_data(market_spot)
+            market_spot['month'] =  market_spot.index.strftime('%Y_%m')
+            market_spot['month'] = market_spot['month'].apply(month_format)
+            market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
+            month_list = market_spot['month'].unique()
+            
+            espread_dfs = []
+            for month in month_list:
+                month_spot = market_spot[market_spot['month'] ==month]
+                json_file = json_name_template.format(month=month)
+                data = self.integrate_singlemonth_spread(month_spot, json_file)
+                if data is None:
+                    continue
+                espread_dfs.extend(data)
+                print('espread for '+month+' has been calculated')
+            print("all done.")
+            market_espread = pd.concat(espread_dfs, axis = 0)
 
         # save result
-        output_file = Path(output_file)
-        output_dir =  output_file.parent
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        market_espread.to_csv(output_file)
+        self.save(market_espread, output_file)
+        
         return market_espread
 
 
 class RSpread(SpreadZoo):
+    def __init__(self, start_date, mark_date, order_number: int, dt = 5):
+        super().__init__(start_date, mark_date, order_number)
+        self.dt = dt
+    
+    
+    def match_spot_quote(self, spot_data:pd.DataFrame, quote_data:pd.DataFrame):
+        # match the time stamp for spot data and quotes
+        # spot_data: processed, time, amount, price, side
+        # quote_data: market order data, 10s
+        if len(quote_data) == 0:
+            merged_data = pd.DataFrame()
+        else:
+            quote_data = self.price_weighted_quotes(quote_data)
+
+            if 'time' in quote_data.columns:
+                quote_data = quote_data.set_index('time')
+            quote_data.index = pd.to_datetime(quote_data.index)
+            if quote_data.index.tz is not None:
+                quote_data.index = quote_data.index.tz_localize(None)
+            
+            merged_data = pd.merge_asof(spot_data[['amount', 'price', 'side']], quote_data[['mid_quote']], 
+                                        left_index=True, right_index=True, direction='backward') # match timestamp (earlier and nearest)
+            
+
+            quote_data_lag = quote_data[['mid_quote']]
+            quote_data_lag.index = quote_data_lag.index - pd.Timedelta(minutes=self.dt)   # TODO: 月末和月初的衔接???
+            quote_data_lag.columns = ['mid_quote_lag']
+            merged_data = pd.merge_asof(merged_data[['amount', 'price', 'side','mid_quote']], quote_data_lag,
+                               left_index=True, right_index=True, direction='forward')
+            
+            merged_data['side'] = merged_data['side'].replace(0,-1) # buy side ==1, sell side == -1
+        
+        return merged_data
+    
+    def cal_rspread(merged_data, daily= True, weight = False):
+        
+        if merged_data.empty:
+            return pd.DataFrame()
+        else:
+            merged_data['rspread'] = merged_data['side']*(merged_data['price']-merged_data['mid_quote_lag'])/merged_data['mid_quote']
+        if daily:
+            def amount_weighted_average(group):
+                weighted_spread = (group['rspread'] * group['amount']).sum() / group['amount'].sum()
+                return pd.Series({'rspread': weighted_spread})
+            if weight:
+                rspread = merged_data.resample('D').apply(amount_weighted_average)
+            else:
+                rspread = merged_data['rspread'].resample('D').mean()
+            rspread = pd.DataFrame(rspread)
+        else:
+            rspread = merged_data[['rspread']]
+
+        return rspread
+
+    def integrate_singlemonth_spread(self, month_spot, json_file):
+        date_quote_dict = self.load_from_json(json_file)
+        rspread_dfs = []
+        if date_quote_dict is None:
+            return None
+        for date in month_spot['date'].unique():
+            date_spot = month_spot[month_spot['date'] == date]
+            date_quote = date_quote_dict[date]
+            date_merge = self.match_spot_quote(date_spot, date_quote)
+            date_rspread = self.cal_rspread(date_merge)  
+            rspread_dfs.append(date_rspread)
+        return rspread_dfs
+    
+    def run(self, csv_file, output_file='../result/rspread.csv', merged_data = None):
+        # spot data
+        if merged_data is not None:
+            market_rspread = self.cal_rspread(merged_data)
+        else: 
+            # spot data
+            market_spot = pd.read_csv(csv_file)
+            market_spot = process_spot_data(market_spot)
+            market_spot['month'] =  market_spot.index.strftime('%Y_%m')
+            market_spot['month'] = market_spot['month'].apply(month_format)
+            market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
+            month_list = market_spot['month'].unique()
+            
+            rspread_dfs = []
+            for month in month_list:
+                month_spot = market_spot[market_spot['month'] ==month]
+                json_file = self.json_name_template.format(month=month)
+                data = self.integrate_singlemonth_spread(month_spot, json_file)
+                if data is None:
+                    continue
+                rspread_dfs.extend(data)
+                print('rspread for '+month+' has been calculated')
+            print("all done.")
+            market_rspread = pd.concat(rspread_dfs, axis = 0)
+
+        # save result
+        self.save(market_rspread, output_file)
+        
+        return market_rspread
+
+
+
+class Adverse_Selection(RSpread):
+    def __init__(self, start_date, mark_date, order_number: int, dt):
+        super().__init__(start_date, mark_date, order_number, dt)
+
+    def cal_adv_selection(merged_data, daily= True, weight = False):
+        if merged_data.empty:
+            return pd.DataFrame()
+        else:
+            merged_data['adverse_selection'] = merged_data['side']*(merged_data['mid_quote_lag'] - merged_data['mid_quote'])/merged_data['mid_quote']
+        
+        if daily:
+            def amount_weighted_average(group):
+                weighted_spread = (group['adverse_selection'] * group['amount']).sum() / group['amount'].sum()
+                return pd.Series({'adverse_selection': weighted_spread})
+            if weight:
+                adv_selection = merged_data.resample('D').apply(amount_weighted_average)
+            else:
+                adv_selection = merged_data['adverse_selection'].resample('D').mean()
+            adv_selection = pd.DataFrame(adv_selection)
+        else:
+            adv_selection = merged_data[['adverse_selection']]
+
+        return adv_selection  
+        
+    def integrate_singlemonth_spread(self, month_spot, json_file):
+        date_quote_dict = self.load_from_json(json_file)
+        adv_selection_dfs = []
+        if date_quote_dict is None:
+            return None
+        for date in month_spot['date'].unique():
+            date_spot = month_spot[month_spot['date'] == date]
+            date_quote = date_quote_dict[date]
+            date_merge = self.match_spot_quote(date_spot, date_quote)
+            date_adv_selection = self.cal_adv_selection(date_merge)  
+            adv_selection_dfs.append(date_adv_selection)
+        return adv_selection_dfs
+    
+    def run(self, csv_file, output_file='../result/adverse_selection.csv', merged_data = None):
+        # spot data
+        if merged_data is not None:
+            market_rspread = self.cal_adv_selection(merged_data)
+        else: 
+            # spot data
+            market_spot = pd.read_csv(csv_file)
+            market_spot = process_spot_data(market_spot)
+            market_spot['month'] =  market_spot.index.strftime('%Y_%m')
+            market_spot['month'] = market_spot['month'].apply(month_format)
+            market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
+            month_list = market_spot['month'].unique()
+            
+            adverse_selection_dfs = []
+            for month in month_list:
+                month_spot = market_spot[market_spot['month'] ==month]
+                json_file = self.json_name_template.format(month=month)
+                data = self.integrate_singlemonth_spread(month_spot, json_file)
+                if data is None:
+                    continue
+                adverse_selection_dfs.extend(data)
+                print('rspread for '+month+' has been calculated')
+            print("all done.")
+            market_rspread = pd.concat(adverse_selection_dfs, axis = 0)
+
+        # save result
+        self.save(market_rspread, output_file)
+        
+        return market_rspread
+    
+
+
+class BASpread(SpreadZoo):
     def __init__(self, start_date, mark_date, order_number: int):
         super().__init__(start_date, mark_date, order_number)
+
     
     def run(self, csv_file, output_file='../result/rspread.csv'):
         # spot data
-        pass
-
-
-
-
-
-
+        pass 
 
 
 
