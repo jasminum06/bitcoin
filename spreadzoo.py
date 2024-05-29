@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 
+# TODO： code问题：save中间变量；有一些步骤有重复
+
 # internal import
 from utils import (process_spot_data, 
                    month_format, 
@@ -282,7 +284,7 @@ class RSpread(SpreadZoo):
             rspread_dfs.append(date_rspread)
         return rspread_dfs
     
-    def run(self, csv_file, output_file='../result/rspread.csv', merged_data = None):
+    def run(self, csv_file, json_name_template, output_file='../result/rspread.csv', merged_data = None):
         # spot data
         if merged_data is not None:
             market_rspread = self.cal_rspread(merged_data)
@@ -351,7 +353,7 @@ class Adverse_Selection(RSpread):
             adv_selection_dfs.append(date_adv_selection)
         return adv_selection_dfs
     
-    def run(self, csv_file, output_file='../result/adverse_selection.csv', merged_data = None):
+    def run(self, csv_file, json_name_template, output_file='../result/adverse_selection.csv', merged_data = None):
         # spot data
         if merged_data is not None:
             market_rspread = self.cal_adv_selection(merged_data)
@@ -372,25 +374,70 @@ class Adverse_Selection(RSpread):
                 if data is None:
                     continue
                 adverse_selection_dfs.extend(data)
-                print('rspread for '+month+' has been calculated')
+                print('adverse selection for '+month+' has been calculated')
             print("all done.")
-            market_rspread = pd.concat(adverse_selection_dfs, axis = 0)
+            market_adv_selection = pd.concat(adverse_selection_dfs, axis = 0)
 
         # save result
-        self.save(market_rspread, output_file)
+        self.save(market_adv_selection, output_file)
         
-        return market_rspread
+        return market_adv_selection
     
-
 
 class BASpread(SpreadZoo):
     def __init__(self, start_date, mark_date, order_number: int):
         super().__init__(start_date, mark_date, order_number)
 
     
-    def run(self, csv_file, output_file='../result/rspread.csv'):
-        # spot data
-        pass 
+    def cal_baspread(merged_data, daily = True):
+        
+        merged_data['bid_ask_spread'] = merged_data['bid_price'] - merged_data['ask_price']
+        if daily:
+            return merged_data[['bid_ask_spread']].resample('D').mean()
+        else:
+            return merged_data[['bid_ask_spread']]
+    
+    def integrate_singlemonth(self, month_spot, json_file):
+        date_quote_dict = self.load_from_json(json_file)
+        baspread_dfs = []
+        if date_quote_dict is None:
+            return None
+        for date in month_spot['date'].unique():
+            date_spot = month_spot[month_spot['date'] == date]
+            date_quote = date_quote_dict[date]
+            date_merge = self.match_spot_quote(date_spot, date_quote)
+            date_baspread = self.cal_adv_selection(date_merge)  
+            baspread_dfs.append(date_baspread)
+        return baspread_dfs
+    
+    def run(self, csv_file, json_name_template, output_file='../result/rspread.csv', merged_data = None):
+        if merged_data is not None:
+            return self.cal_baspread(merged_data)  # TODO: 没办法更改daily的bool值 # 可以在init里加
+        else:
+            market_spot = pd.read_csv(csv_file)
+            market_spot = process_spot_data(market_spot)
+            market_spot['month'] =  market_spot.index.strftime('%Y_%m')
+            market_spot['month'] = market_spot['month'].apply(month_format)
+            market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
+            month_list = market_spot['month'].unique()
+            
+            baspread_dfs = []
+            for month in month_list:
+                month_spot = market_spot[market_spot['month'] ==month]
+                json_file = self.json_name_template.format(month=month)
+                data = self.integrate_singlemonth_spread(month_spot, json_file)
+                if data is None:
+                    continue
+                baspread_dfs.extend(data)
+                print('bid-ask spread for '+month+' has been calculated')
+            print("all done.")
+            market_baspread = pd.concat(baspread_dfs, axis = 0)
+
+        # save result
+        self.save(market_baspread, output_file)
+        
+        return market_baspread
+        
 
 
 
