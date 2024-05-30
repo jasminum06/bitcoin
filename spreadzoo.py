@@ -62,7 +62,7 @@ class SpreadZoo:
             mid_quotes = mid_quotes[['timestamp', 'ask_price', 'ask_size','bid_price', 'bid_size','mid_quote']]
             mid_quotes.columns = ['time', 'ask_price', 'ask_size','bid_price', 'bid_size','mid_quote']
         
-            quote_data_dict[date] = mid_quotes.sort_values(by = 'timestamp')
+            quote_data_dict[date] = mid_quotes.sort_values(by = 'time')
             
         print('quote_data for '+date+ ' has been processed')
         
