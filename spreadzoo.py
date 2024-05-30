@@ -93,8 +93,8 @@ class SpreadZoo:
             return weighted_sum
         
         for i in iter([5,20]):    
-            ask_prices['weighted_ask_{i}'] = ask_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
-            bid_prices['weighted_bid_{i}'] = bid_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
+            ask_prices['weighted_ask_{}'.format(str(i))] = ask_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
+            bid_prices['weighted_bid_{}'.format(str(i))] = bid_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
         
         mid_quotes = (ask_prices + bid_prices)/2
         mid_quotes.columns = ['level_{}_mid_quote'.format(k) for k in range(1, (1+self.level_number))] + \
@@ -430,8 +430,8 @@ class BASpread(SpreadZoo):
             return weighted_sum
         
         for i in iter([5,20]):    
-            ask_prices['weighted_ask_{i}'] = ask_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
-            bid_prices['weighted_bid_{i}'] = bid_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
+            ask_prices['weighted_ask_{}'.format(str(i))] = ask_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
+            bid_prices['weighted_bid_{}'.format(str(i))] = bid_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
         
         baspread = bid_prices - ask_prices
         baspread.columns = ['level_{}_baspread'.format(k) for k in range(1, (1+self.level_number))] + \
