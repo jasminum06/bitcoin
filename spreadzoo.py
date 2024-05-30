@@ -163,7 +163,7 @@ class ESpread(SpreadZoo):
             espread = pd.DataFrame()
         else:
             merged_data_mid_quotes = merged_data.drop(columns = ['side', 'amount', 'price'])
-            espread = merged_data['side'].values[:, None]*(-merged_data_mid_quotes.subtract(merged_data['price']))/merged_data_mid_quotes
+            espread = merged_data['side'].values[:, None]*(-merged_data_mid_quotes.subtract(merged_data['price'], axis=0))/merged_data_mid_quotes
             espread = pd.concat([espread, merged_data[['amount']]], axis =1)
             
             if self.freq == 'daily':
