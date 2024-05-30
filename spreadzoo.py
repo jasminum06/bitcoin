@@ -16,6 +16,7 @@ from utils import (process_spot_data,
 ''' effective spread'''
 def save_data(data, output_file):
     
+    output_file = Path(output_file)
     output_dir = output_file.parent
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -178,6 +179,8 @@ class ESpread(SpreadZoo):
             elif self.freq == 'tick':
                 espread = espread.drop(columns = ['amount'])
 
+        espread.columns = ['level_{}_espread'.format(k) for k in range(1, (1+self.level_number))] + \
+                             ['weighted_5_levels_espread', 'weighted_20_levels_espread']
         return espread
     
     def integrate_singlemonth_spread(self, month_spot, json_file):
@@ -219,7 +222,7 @@ class ESpread(SpreadZoo):
             market_espread = pd.concat(espread_dfs, axis = 0)
 
         # save result
-        self.save(market_espread, output_file)
+        save_data(market_espread, output_file)
         
         return market_espread
 
@@ -245,15 +248,16 @@ class RSpread(SpreadZoo):
             if quote_data.index.tz is not None:
                 quote_data.index = quote_data.index.tz_localize(None)
             
-            merged_data = pd.merge_asof(spot_data[['amount', 'price', 'side']], quote_data[['mid_quote']], 
+            merged_data = pd.merge_asof(spot_data[['amount', 'price', 'side']], quote_data, 
                                         left_index=True, right_index=True, direction='backward') # match timestamp (earlier and nearest)
             
 
-            quote_data_lag = quote_data[['mid_quote']]
+            quote_data_lag = quote_data
             quote_data_lag.index = quote_data_lag.index - pd.Timedelta(minutes=self.dt)   # TODO: 月末和月初的衔接???
-            quote_data_lag.columns = ['mid_quote_lag']
-            merged_data = pd.merge_asof(merged_data[['amount', 'price', 'side','mid_quote']], quote_data_lag,
-                               left_index=True, right_index=True, direction='forward')
+            quote_data_lag.columns = ['level_{}_mid_quote_lag'.format(k) for k in range(1, (self.level_number+1))] +\
+                                    ['weighted_5_levels_mid_quote_lag', 'weighted_20_levels_mid_quote_lag']
+            merged_data = pd.merge_asof(merged_data, quote_data_lag,
+                               left_index=True, right_index=True, direction='backward') # TODO: check: forward or backward?
             
             merged_data['side'] = merged_data['side'].replace(0,-1) # buy side ==1, sell side == -1
         
@@ -264,19 +268,26 @@ class RSpread(SpreadZoo):
         if merged_data.empty:
             return pd.DataFrame()
         else:
-            merged_data['rspread'] = merged_data['side']*(merged_data['price']-merged_data['mid_quote_lag'])/merged_data['mid_quote']
+            merged_data_mid_quotes_lag = merged_data[['level_{}_mid_quote_lag'.format(k) for k in range(1, (self.level_number+1))] +['weighted_5_levels_mid_quote_lag', 'weighted_20_levels_mid_quote_lag']]
+            merged_data_mid_quotes = merged_data[['level_{}_mid_quote'.format(k) for k in range(1, (self.level_number+1))] +['weighted_5_levels_mid_quote', 'weighted_20_levels_mid_quote']]
+            merged_data_mid_quotes_lag.columns = merged_data_mid_quotes.columns
+            rspread = merged_data['side'].values[:,None]*(-merged_data_mid_quotes_lag.subtract(merged_data['price'], axis = 0))/merged_data_mid_quotes
+            rspread = pd.concat([rspread, merged_data[['amount']]], axis = 1)
+            
         if self.freq == 'daily':
             def amount_weighted_average(group):
-                weighted_spread = (group['rspread'] * group['amount']).sum() / group['amount'].sum()
-                return pd.Series({'rspread': weighted_spread})
+                    weighted_spread = (group.drop(columns = ['amount']) * group['amount'].values[:, None]).sum(axis=0) / group['amount'].sum()
+                    return weighted_spread
             if weight:
                 rspread = merged_data.resample('D').apply(amount_weighted_average)
             else:
-                rspread = merged_data['rspread'].resample('D').mean()
-            rspread = pd.DataFrame(rspread)
+                rspread = merged_data.drop(columns = ['amount']).resample('D').mean()
         elif self.freq == 'tick':
-            rspread = merged_data[['rspread']]
-
+            rspread = merged_data.drop(columns = ['amount'])
+            
+        rspread.columns = ['level_{}_rspread'.format(k) for k in range(1, (1+self.level_number))] + \
+                             ['weighted_5_levels_rspread', 'weighted_20_levels_rspread']
+            
         return rspread
 
     def integrate_singlemonth_spread(self, month_spot, json_file):
@@ -318,7 +329,7 @@ class RSpread(SpreadZoo):
             market_rspread = pd.concat(rspread_dfs, axis = 0)
 
         # save result
-        self.save(market_rspread, output_file)
+        save_data(market_rspread, output_file)
         
         return market_rspread
 
@@ -332,19 +343,26 @@ class Adverse_Selection(RSpread):
         if merged_data.empty:
             return pd.DataFrame()
         else:
-            merged_data['adverse_selection'] = merged_data['side']*(merged_data['mid_quote_lag'] - merged_data['mid_quote'])/merged_data['mid_quote']
-        
+            merged_data_mid_quotes_lag = merged_data[['level_{}_mid_quote_lag'.format(k) for k in range(1, (self.level_number+1))] +['weighted_5_levels_mid_quote_lag', 'weighted_20_levels_mid_quote_lag']]
+            merged_data_mid_quotes = merged_data[['level_{}_mid_quote'.format(k) for k in range(1, (self.level_number+1))] +['weighted_5_levels_mid_quote', 'weighted_20_levels_mid_quote']]
+            merged_data_mid_quotes_lag.columns = merged_data_mid_quotes.columns
+            
+            adv_selection = merged_data['side'].values[:,None]*(merged_data_mid_quotes_lag- merged_data_mid_quotes)/merged_data_mid_quotes
+            adv_selection = pd.concat([adv_selection, merged_data[['amount']]], axis =1)
+            
         if self.freq == 'daily':
             def amount_weighted_average(group):
-                weighted_spread = (group['adverse_selection'] * group['amount']).sum() / group['amount'].sum()
-                return pd.Series({'adverse_selection': weighted_spread})
+                    weighted_spread = (group.drop(columns = ['amount']) * group['amount'].values[:, None]).sum(axis=0) / group['amount'].sum()
+                    return weighted_spread
             if weight:
                 adv_selection = merged_data.resample('D').apply(amount_weighted_average)
             else:
-                adv_selection = merged_data['adverse_selection'].resample('D').mean()
-            adv_selection = pd.DataFrame(adv_selection)
+                adv_selection = merged_data.drop(columns = ['amount']).resample('D').mean()
         else:
-            adv_selection = merged_data[['adverse_selection']]
+            adv_selection = adv_selection.drop( columns=['amount'])
+        
+        adv_selection.columns = ['level_{}_adv_selection'.format(k) for k in range(1, (1+self.level_number))] + \
+                             ['weighted_5_levels_adv_selection', 'weighted_20_levels_adv_selection']
 
         return adv_selection  
         
@@ -387,7 +405,7 @@ class Adverse_Selection(RSpread):
             market_adv_selection = pd.concat(adverse_selection_dfs, axis = 0)
 
         # save result
-        self.save(market_adv_selection, output_file)
+        save_data(market_adv_selection, output_file)
         
         return market_adv_selection
     
@@ -396,14 +414,62 @@ class BASpread(SpreadZoo):
     def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name):
         super().__init__(start_date, mark_date, order_number, freq, spread_name)
 
+    def quote_baspread(self, quote_data):
+        # level_list = ['level_{}'.format(i) for i in range(self.level_number)]
+        # filtered_quotes = quote_data[quote_data['level'].isin(level_list)]
+        
+        quote_data = quote_data.sort_values(by =['time','level'])
+        ask_prices = quote_data.pivot(index = 'time', columns = 'level', values = 'ask_price')
+        bid_prices = quote_data.pivot(index = 'time', columns = 'level', values = 'bid_price')
+        
+        def weighted_avg(row):
+            values = row.values
+            total = values.sum()
+            weights = values / total
+            weighted_sum = (values * weights).sum() # TODO: 根据price加权还是根据amount加权？
+            return weighted_sum
+        
+        for i in iter([5,20]):    
+            ask_prices['weighted_ask_{i}'] = ask_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
+            bid_prices['weighted_bid_{i}'] = bid_prices.iloc[:,:i].apply(weighted_avg, axis = 1)
+        
+        baspread = bid_prices - ask_prices
+        baspread.columns = ['level_{}_baspread'.format(k) for k in range(1, (1+self.level_number))] + \
+                             ['weighted_5_levels_baspread', 'weighted_20_levels_baspread']
+        
+        return baspread
+    
+    def match_spot_quote(self, spot_data:pd.DataFrame, quote_data:pd.DataFrame):
+        # match the time stamp for spot data and quotes
+        # spot_data: processed, time, amount, price, side
+        # quote_data: market order data, 10s
+        if len(quote_data) == 0:
+            merged_data = pd.DataFrame()
+        else:
+            quote_data = self.quote_baspread(quote_data)
+
+            if 'time' in quote_data.columns:
+                quote_data = quote_data.set_index('time')
+            quote_data.index = pd.to_datetime(quote_data.index)
+            if quote_data.index.tz is not None:
+                quote_data.index = quote_data.index.tz_localize(None)
+            
+            merged_data = pd.merge_asof(spot_data[['amount', 'price', 'side']], quote_data, 
+                                        left_index=True, right_index=True, direction='backward') # match timestamp (earlier and nearest)
+            merged_data['side'] = merged_data['side'].replace(0,-1) # buy side ==1, sell side == -1
+        
+        return merged_data
     
     def cal_baspread(self, merged_data):
-        
-        merged_data['bid_ask_spread'] = merged_data['bid_price'] - merged_data['ask_price']
-        if self.freq == 'daily':
-            return merged_data[['bid_ask_spread']].resample('D').mean()
+        if merged_data.empty:
+            baspread = pd.DataFrame()
         else:
-            return merged_data[['bid_ask_spread']]
+            baspread = merged_data.drop(columns = ['side', 'amount', 'price'])
+            
+        if self.freq == 'daily':
+            return baspread.resample('D').mean()
+        else:
+            return baspread
     
     def integrate_singlemonth(self, month_spot, json_file):
         date_quote_dict = self.load_from_json(json_file)
@@ -442,7 +508,7 @@ class BASpread(SpreadZoo):
             market_baspread = pd.concat(baspread_dfs, axis = 0)
 
         # save result
-        self.save(market_baspread, output_file)
+        save_data(market_baspread, output_file)
         
         return market_baspread
         
