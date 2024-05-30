@@ -59,8 +59,8 @@ class SpreadZoo:
             mid_quotes['time'] = mid_quotes['time'].apply(lambda x: x[11:19])
 
             mid_quotes['timestamp'] = pd.to_datetime(mid_quotes['date'].astype(str) + ' ' + mid_quotes['time'])
-            mid_quotes = mid_quotes[['timestamp', 'ask_price', 'ask_size','bid_price', 'bid_size','mid_quote']]
-            mid_quotes.columns = ['time', 'ask_price', 'ask_size','bid_price', 'bid_size','mid_quote']
+            mid_quotes = mid_quotes[['timestamp', 'ask_price', 'ask_size','bid_price', 'bid_size','level', 'mid_quote']]
+            mid_quotes.columns = ['time', 'ask_price', 'ask_size','bid_price', 'bid_size','level', 'mid_quote']
         
             quote_data_dict[date] = mid_quotes.sort_values(by = 'time')
             
