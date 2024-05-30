@@ -191,7 +191,7 @@ class ESpread(SpreadZoo):
         else:
             # spot data
             market_spot = pd.read_csv(csv_file)
-            market_spot = process_spot_data(market_spot)
+            market_spot = process_spot_data(market_spot, self.start_date)
             market_spot['month'] =  market_spot.index.strftime('%Y_%m')
             market_spot['month'] = market_spot['month'].apply(month_format)
             market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
@@ -290,7 +290,7 @@ class RSpread(SpreadZoo):
         else: 
             # spot data
             market_spot = pd.read_csv(csv_file)
-            market_spot = process_spot_data(market_spot)
+            market_spot = process_spot_data(market_spot, self.start_date)
             market_spot['month'] =  market_spot.index.strftime('%Y_%m')
             market_spot['month'] = market_spot['month'].apply(month_format)
             market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
@@ -359,7 +359,7 @@ class Adverse_Selection(RSpread):
         else: 
             # spot data
             market_spot = pd.read_csv(csv_file)
-            market_spot = process_spot_data(market_spot)
+            market_spot = process_spot_data(market_spot, self.start_date)
             market_spot['month'] =  market_spot.index.strftime('%Y_%m')
             market_spot['month'] = market_spot['month'].apply(month_format)
             market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
@@ -414,7 +414,7 @@ class BASpread(SpreadZoo):
             return self.cal_baspread(merged_data)  # TODO: 没办法更改daily的bool值 # 可以在init里加
         else:
             market_spot = pd.read_csv(csv_file)
-            market_spot = process_spot_data(market_spot)
+            market_spot = process_spot_data(market_spot, self.start_date)
             market_spot['month'] =  market_spot.index.strftime('%Y_%m')
             market_spot['month'] = market_spot['month'].apply(month_format)
             market_spot['date'] =  market_spot.index.strftime('%Y-%m-%d')
