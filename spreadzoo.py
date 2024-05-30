@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import json
 import os
 from pathlib import Path
+import datetime as dt
 
 # TODO： code问题：save中间变量；有一些步骤有重复
 
@@ -146,8 +147,8 @@ class SpreadZoo:
 
 
 class ESpread(SpreadZoo):
-    def __init__(self, start_date, mark_date, order_number: int):
-        super().__init__(start_date, mark_date, order_number)
+    def __init__(self, start_date, mark_date, order_number: int, freq:str):
+        super().__init__(start_date, mark_date, order_number, freq)
     
     
     def cal_espread(self, merged_data:pd.DataFrame, weight=False):
@@ -216,8 +217,8 @@ class ESpread(SpreadZoo):
 
 
 class RSpread(SpreadZoo):
-    def __init__(self, start_date, mark_date, order_number: int, dt = 5):
-        super().__init__(start_date, mark_date, order_number)
+    def __init__(self, start_date, mark_date, order_number: int, freq: str, dt):
+        super().__init__(start_date, mark_date, order_number, freq)
         self.dt = dt
     
     
@@ -316,8 +317,8 @@ class RSpread(SpreadZoo):
 
 
 class Adverse_Selection(RSpread):
-    def __init__(self, start_date, mark_date, order_number: int, dt):
-        super().__init__(start_date, mark_date, order_number, dt)
+    def __init__(self, start_date, mark_date, order_number: int, freq:str, dt):
+        super().__init__(start_date, mark_date, order_number, freq, dt)
 
     def cal_adv_selection(self, merged_data, weight = False):
         if merged_data.empty:
@@ -355,7 +356,7 @@ class Adverse_Selection(RSpread):
     def run(self, csv_file, json_name_template, output_file='../result/adverse_selection.csv', merged_data = None):
         # spot data
         if merged_data is not None:
-            market_rspread = self.cal_adv_selection(merged_data)
+            market_adv_selection = self.cal_adv_selection(merged_data)
         else: 
             # spot data
             market_spot = pd.read_csv(csv_file)
@@ -384,8 +385,8 @@ class Adverse_Selection(RSpread):
     
 
 class BASpread(SpreadZoo):
-    def __init__(self, start_date, mark_date, order_number: int):
-        super().__init__(start_date, mark_date, order_number)
+    def __init__(self, start_date, mark_date, order_number: int, freq:str):
+        super().__init__(start_date, mark_date, order_number, freq)
 
     
     def cal_baspread(self, merged_data):
