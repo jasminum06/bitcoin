@@ -153,8 +153,8 @@ class SpreadZoo:
 
 
 class ESpread(SpreadZoo):
-    def __init__(self, start_date, mark_date, order_number: int, freq:str):
-        super().__init__(start_date, mark_date, order_number, freq)
+    def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name):
+        super().__init__(start_date, mark_date, order_number, freq, spread_name)
     
     
     def cal_espread(self, merged_data:pd.DataFrame, weight=False):
