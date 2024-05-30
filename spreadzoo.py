@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import datetime as dt
-import glob
 import json
 import os
 from pathlib import Path
@@ -26,10 +24,11 @@ def save_data(data, output_file):
 # calculate spread and plot
 # data processing
 class SpreadZoo:
-    def __init__(self, start_date, mark_date, level_number:int):
+    def __init__(self, start_date, mark_date, level_number:int, freq:str):
         self.start_date = start_date
         self.mark_date = mark_date
         self.level_number = level_number
+        self.freq = freq # freq = 'tick' or 'daily'
         
         
     def json_to_dfs(self, quote_data:dict):
@@ -150,15 +149,15 @@ class ESpread(SpreadZoo):
     def __init__(self, start_date, mark_date, order_number: int):
         super().__init__(start_date, mark_date, order_number)
     
-    @staticmethod
-    def cal_espread(merged_data:pd.DataFrame, daily = True, weight=False):
+    
+    def cal_espread(self, merged_data:pd.DataFrame, weight=False):
         # calculate effective spread
         if merged_data.empty:
             espread = pd.DataFrame()
         else:
             merged_data['espread'] = merged_data['side']*(merged_data['price'] - merged_data['mid_quote'])/merged_data['mid_quote']
             
-            if daily == True:
+            if self.freq == 'daily':
                 def amount_weighted_average(group):
                     weighted_spread = (group['espread'] * group['amount']).sum() / group['amount'].sum()
                     return pd.Series({'espread': weighted_spread})
@@ -167,7 +166,7 @@ class ESpread(SpreadZoo):
                 else:
                     espread = merged_data['espread'].resample('D').mean()
                 espread = pd.DataFrame(espread)
-            else:
+            elif self.freq == 'tick':
                 espread = merged_data[['espread']]
 
         return espread
@@ -251,13 +250,13 @@ class RSpread(SpreadZoo):
         
         return merged_data
     
-    def cal_rspread(merged_data, daily= True, weight = False):
+    def cal_rspread(self, merged_data, weight = False):
         
         if merged_data.empty:
             return pd.DataFrame()
         else:
             merged_data['rspread'] = merged_data['side']*(merged_data['price']-merged_data['mid_quote_lag'])/merged_data['mid_quote']
-        if daily:
+        if self.freq == 'daily':
             def amount_weighted_average(group):
                 weighted_spread = (group['rspread'] * group['amount']).sum() / group['amount'].sum()
                 return pd.Series({'rspread': weighted_spread})
@@ -266,7 +265,7 @@ class RSpread(SpreadZoo):
             else:
                 rspread = merged_data['rspread'].resample('D').mean()
             rspread = pd.DataFrame(rspread)
-        else:
+        elif self.freq == 'tick':
             rspread = merged_data[['rspread']]
 
         return rspread
@@ -300,7 +299,7 @@ class RSpread(SpreadZoo):
             rspread_dfs = []
             for month in month_list:
                 month_spot = market_spot[market_spot['month'] ==month]
-                json_file = self.json_name_template.format(month=month)
+                json_file = json_name_template.format(month=month)
                 data = self.integrate_singlemonth_spread(month_spot, json_file)
                 if data is None:
                     continue
@@ -320,13 +319,13 @@ class Adverse_Selection(RSpread):
     def __init__(self, start_date, mark_date, order_number: int, dt):
         super().__init__(start_date, mark_date, order_number, dt)
 
-    def cal_adv_selection(merged_data, daily= True, weight = False):
+    def cal_adv_selection(self, merged_data, weight = False):
         if merged_data.empty:
             return pd.DataFrame()
         else:
             merged_data['adverse_selection'] = merged_data['side']*(merged_data['mid_quote_lag'] - merged_data['mid_quote'])/merged_data['mid_quote']
         
-        if daily:
+        if self.freq == 'daily':
             def amount_weighted_average(group):
                 weighted_spread = (group['adverse_selection'] * group['amount']).sum() / group['amount'].sum()
                 return pd.Series({'adverse_selection': weighted_spread})
@@ -369,7 +368,7 @@ class Adverse_Selection(RSpread):
             adverse_selection_dfs = []
             for month in month_list:
                 month_spot = market_spot[market_spot['month'] ==month]
-                json_file = self.json_name_template.format(month=month)
+                json_file = json_name_template.format(month=month)
                 data = self.integrate_singlemonth_spread(month_spot, json_file)
                 if data is None:
                     continue
@@ -389,10 +388,10 @@ class BASpread(SpreadZoo):
         super().__init__(start_date, mark_date, order_number)
 
     
-    def cal_baspread(merged_data, daily = True):
+    def cal_baspread(self, merged_data):
         
         merged_data['bid_ask_spread'] = merged_data['bid_price'] - merged_data['ask_price']
-        if daily:
+        if self.freq == 'daily':
             return merged_data[['bid_ask_spread']].resample('D').mean()
         else:
             return merged_data[['bid_ask_spread']]
@@ -424,7 +423,7 @@ class BASpread(SpreadZoo):
             baspread_dfs = []
             for month in month_list:
                 month_spot = market_spot[market_spot['month'] ==month]
-                json_file = self.json_name_template.format(month=month)
+                json_file = json_name_template.format(month=month)
                 data = self.integrate_singlemonth_spread(month_spot, json_file)
                 if data is None:
                     continue
