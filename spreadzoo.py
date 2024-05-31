@@ -481,11 +481,11 @@ class BASpread(SpreadZoo):
             date_spot = month_spot[month_spot['date'] == date]
             date_quote = date_quote_dict[date]
             date_merge = self.match_spot_quote(date_spot, date_quote)
-            date_baspread = self.cal_adv_selection(date_merge)  
+            date_baspread = self.cal_baspread(date_merge)  
             baspread_dfs.append(date_baspread)
         return baspread_dfs
     
-    def run(self, csv_file, json_name_template, output_file='../result/rspread.csv', merged_data = None):
+    def run(self, csv_file, json_name_template, output_file='../result/baspread.csv', merged_data = None):
         if merged_data is not None:
             return self.cal_baspread(merged_data)  # TODO: 没办法更改daily的bool值 # 可以在init里加
         else:
