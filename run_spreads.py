@@ -19,10 +19,10 @@ for market_name in market_names:
     print('daily espread for '+market_name+' has been saved')
     
     # 2&3
-    for dt in iter([5,15,30]):
-        rspread_daily = RSpread(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'rspread', dt = dt)
-        adv_selection_daily = Adverse_Selection(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'adverse_selection', dt=dt)
-        
+    for delta_t in iter([5,15,30]):
+        rspread_daily = RSpread(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'rspread', delta_t = int(delta_t))
+        adv_selection_daily = Adverse_Selection(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'adverse_selection', delta_t=int(delta_t))
+    
         rspread = rspread_daily.run('../data/spot/'+market_name+'-spot_spot.csv', 
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                            output_file=f'../result/daily/{market_name}/realized_spread.csv'
@@ -35,7 +35,7 @@ for market_name in market_names:
             rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/')
             adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/')
         
-        print('daily rspread and adverse selection for '+market_name+ 'with dt = '+dt+'mins has been saved')
+        print('daily rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
     # 4    
     baspread_daily = BASpread(start_date, mark_date, level_number, freq_daily, spread_name = 'bid-ask spread')
@@ -66,9 +66,9 @@ for market_name in market_names:
     print('tick espread for '+market_name+' has been saved')
     
     # 2&3
-    for dt in iter([5,15,30]): #minitues match # TODO: forward or backward?
-        rspread_tick = RSpread(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'rspread', dt = dt)
-        adv_selection_tick = Adverse_Selection(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'adverse_selection', dt=dt)
+    for delta_t in iter([5,15,30]): #minitues match # TODO: forward or backward?
+        rspread_tick = RSpread(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'rspread', delta_t = int(delta_t))
+        adv_selection_tick = Adverse_Selection(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'adverse_selection', delta_t = int(delta_t))
         
         rspread = rspread_tick.run('../data/spot/'+market_name+'-spot_spot.csv', 
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
@@ -82,7 +82,7 @@ for market_name in market_names:
             rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/')
             adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/')
         
-        print('tick rspread and adverse selection for '+market_name+ 'with dt = '+dt+'mins has been saved')
+        print('tick rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
     # 4    
     baspread_tick = BASpread(start_date, mark_date, level_number, freq= freq_tick, spread_name = 'bid-ask spread')

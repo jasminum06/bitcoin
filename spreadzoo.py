@@ -228,9 +228,9 @@ class ESpread(SpreadZoo):
 
 
 class RSpread(SpreadZoo):
-    def __init__(self, start_date, mark_date, order_number: int, freq: str, spread_name, dt):
+    def __init__(self, start_date, mark_date, order_number: int, freq: str, spread_name, delta_t:int):
         super().__init__(start_date, mark_date, order_number, freq, spread_name)
-        self.dt = dt
+        self.delta_t = delta_t
     
     
     def match_spot_quote(self, spot_data:pd.DataFrame, quote_data:pd.DataFrame):
@@ -253,7 +253,7 @@ class RSpread(SpreadZoo):
             
 
             quote_data_lag = quote_data
-            quote_data_lag.index = quote_data_lag.index - pd.Timedelta(minutes=self.dt)   # TODO: 月末和月初的衔接???
+            quote_data_lag.index = quote_data_lag.index - pd.Timedelta(minutes=self.delta_t)   # TODO: 月末和月初的衔接???
             quote_data_lag.columns = ['level_{}_mid_quote_lag'.format(k) for k in range(1, (self.level_number+1))] +\
                                     ['weighted_5_levels_mid_quote_lag', 'weighted_20_levels_mid_quote_lag']
             merged_data = pd.merge_asof(merged_data, quote_data_lag,
@@ -336,8 +336,8 @@ class RSpread(SpreadZoo):
 
 
 class Adverse_Selection(RSpread):
-    def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name, dt):
-        super().__init__(start_date, mark_date, order_number, freq, dt, spread_name)
+    def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name, delta_t:int):
+        super().__init__(start_date, mark_date, order_number, freq, delta_t, spread_name)
 
     def cal_adv_selection(self, merged_data, weight = False):
         if merged_data.empty:
