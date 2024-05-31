@@ -20,20 +20,20 @@ for market_name in market_names:
     
     # 2&3
     for delta_t in iter([5,15,30]):
-        rspread_daily = RSpread(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'rspread', delta_t = int(delta_t))
-        adv_selection_daily = Adverse_Selection(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'adverse_selection', delta_t=int(delta_t))
+        rspread_daily = RSpread(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'rspread', delta_t = delta_t)
+        adv_selection_daily = Adverse_Selection(start_date, mark_date, level_number, freq = freq_daily, spread_name = 'adverse_selection', delta_t= delta_t)
     
         rspread = rspread_daily.run('../data/spot/'+market_name+'-spot_spot.csv', 
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
-                                           output_file=f'../result/daily/{market_name}/realized_spread.csv'
+                                           output_file=f'../result/daily/{market_name}/realized_spread_'+str(delta_t)+'mins.csv'
                                          )
         adv_selection = adv_selection_daily.run('../data/spot/'+market_name+'-spot_spot.csv', 
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
-                                           output_file=f'../result/daily/{market_name}/adverse_selection.csv'
+                                           output_file=f'../result/daily/{market_name}/adverse_selection_'+str(delta_t)+'mins.csv'
                                          )
         for level in range(1,23):
-            rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/')
-            adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/')
+            rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/{str(delta_t)+'_mins'}/')
+            adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/{str(delta_t)+'_mins'}/')
         
         print('daily rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
@@ -67,20 +67,20 @@ for market_name in market_names:
     
     # 2&3
     for delta_t in iter([5,15,30]): #minitues match # TODO: forward or backward?
-        rspread_tick = RSpread(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'rspread', delta_t = int(delta_t))
-        adv_selection_tick = Adverse_Selection(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'adverse_selection', delta_t = int(delta_t))
+        rspread_tick = RSpread(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'rspread', delta_t = delta_t)
+        adv_selection_tick = Adverse_Selection(start_date, mark_date, level_number, freq = freq_tick, spread_name = 'adverse_selection', delta_t = delta_t)
         
         rspread = rspread_tick.run('../data/spot/'+market_name+'-spot_spot.csv', 
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
-                                           output_file=f'../result/tick/{market_name}/realized_spread.csv'
+                                           output_file=f'../result/tick/{market_name}/realized_spread_'+str(delta_t)+'mins.csv'
                                          )
         adv_selection = adv_selection_tick.run('../data/spot/'+market_name+'-spot_spot.csv', 
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
-                                           output_file=f'../result/tick/{market_name}/adverse_selection.csv'
+                                           output_file=f'../result/tick/{market_name}/adverse_selection_'+str(delta_t)+'mins.csv'
                                          )
         for level in range(1,23):
-            rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/')
-            adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/')
+            rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/{str(delta_t)+'_mins'}/')
+            adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/{str(delta_t)+'_mins'}/')
         
         print('tick rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
