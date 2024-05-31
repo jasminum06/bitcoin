@@ -228,9 +228,9 @@ class ESpread(SpreadZoo):
 
 
 class RSpread(SpreadZoo):
-    def __init__(self, start_date, mark_date, order_number: int, freq: str, spread_name, delta_t:int):
+    def __init__(self, start_date, mark_date, order_number: int, freq: str, spread_name, delta_t):
         super().__init__(start_date, mark_date, order_number, freq, spread_name)
-        self.delta_t = delta_t
+        self.delta_t = int(delta_t)
     
     
     def match_spot_quote(self, spot_data:pd.DataFrame, quote_data:pd.DataFrame):
@@ -336,7 +336,7 @@ class RSpread(SpreadZoo):
 
 
 class Adverse_Selection(RSpread):
-    def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name, delta_t:int):
+    def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name, delta_t):
         super().__init__(start_date, mark_date, order_number, freq, delta_t, spread_name)
 
     def cal_adv_selection(self, merged_data, weight = False):
