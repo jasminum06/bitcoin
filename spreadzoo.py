@@ -472,7 +472,7 @@ class BASpread(SpreadZoo):
         else:
             return baspread
     
-    def integrate_singlemonth(self, month_spot, json_file):
+    def integrate_singlemonth_spread(self, month_spot, json_file):
         date_quote_dict = self.load_from_json(json_file)
         baspread_dfs = []
         if date_quote_dict is None:
