@@ -279,11 +279,11 @@ class RSpread(SpreadZoo):
                     weighted_spread = (group.drop(columns = ['amount']) * group['amount'].values[:, None]).sum(axis=0) / group['amount'].sum()
                     return weighted_spread
             if weight:
-                rspread = merged_data.resample('D').apply(amount_weighted_average)
+                rspread = rspread.resample('D').apply(amount_weighted_average)
             else:
-                rspread = merged_data.drop(columns = ['amount']).resample('D').mean()
+                rspread = rspread.drop(columns = ['amount']).resample('D').mean()
         elif self.freq == 'tick':
-            rspread = merged_data.drop(columns = ['amount'])
+            rspread = rspread.drop(columns = ['amount'])
             
         rspread.columns = ['level_{}_rspread'.format(k) for k in range(1, (1+self.level_number))] + \
                              ['weighted_5_levels_rspread', 'weighted_20_levels_rspread']
@@ -355,11 +355,11 @@ class Adverse_Selection(RSpread):
                     weighted_spread = (group.drop(columns = ['amount']) * group['amount'].values[:, None]).sum(axis=0) / group['amount'].sum()
                     return weighted_spread
             if weight:
-                adv_selection = merged_data.resample('D').apply(amount_weighted_average)
+                adv_selection = adv_selection.resample('D').apply(amount_weighted_average)
             else:
-                adv_selection = merged_data.drop(columns = ['amount']).resample('D').mean()
+                adv_selection = adv_selection.drop(columns = ['amount']).resample('D').mean()
         else:
-            adv_selection = adv_selection.drop( columns=['amount'])
+            adv_selection = adv_selection.drop(columns=['amount'])
         
         adv_selection.columns = ['level_{}_adv_selection'.format(k) for k in range(1, (1+self.level_number))] + \
                              ['weighted_5_levels_adv_selection', 'weighted_20_levels_adv_selection']
