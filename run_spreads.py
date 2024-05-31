@@ -32,8 +32,8 @@ for market_name in market_names:
                                            output_file=f'../result/daily/{market_name}/adverse_selection_'+str(delta_t)+'mins.csv'
                                          )
         for level in range(1,23):
-            rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/{str(delta_t)+'_mins'}/')
-            adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/{str(delta_t)+'_mins'}/')
+            rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/{str(delta_t)}_mins/')
+            adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/{str(delta_t)}_mins/')
         
         print('daily rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
@@ -79,8 +79,8 @@ for market_name in market_names:
                                            output_file=f'../result/tick/{market_name}/adverse_selection_'+str(delta_t)+'mins.csv'
                                          )
         for level in range(1,23):
-            rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/{str(delta_t)+'_mins'}/')
-            adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/{str(delta_t)+'_mins'}/')
+            rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/{str(delta_t)}_mins/')
+            adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/{str(delta_t)}_mins/')
         
         print('tick rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
