@@ -337,7 +337,8 @@ class RSpread(SpreadZoo):
 
 class Adverse_Selection(RSpread):
     def __init__(self, start_date, mark_date, order_number: int, freq:str, spread_name, delta_t):
-        super().__init__(start_date, mark_date, order_number, freq, delta_t, spread_name)
+        super().__init__(start_date, mark_date, order_number, freq, spread_name,  delta_t)
+
 
     def cal_adv_selection(self, merged_data, weight = False):
         if merged_data.empty:
