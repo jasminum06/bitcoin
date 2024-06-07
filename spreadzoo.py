@@ -12,16 +12,6 @@ import datetime as dt
 from utils import (process_spot_data, 
                    month_format, 
                    plot_axis)
-
-''' effective spread'''
-def save_data(data, output_file):
-    
-    output_file = Path(output_file)
-    output_dir = output_file.parent
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    data.to_csv(output_file)
-    
     
 # calculate spread and plot
 # data processing
@@ -173,6 +163,26 @@ class SpreadZoo:
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
+            
+    def save_data(self, data, output_file):
+        # save data as csv file
+        # output_file: should be ended with .csv
+        output_file = Path(output_file)
+        output_dir = output_file.parent
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        if self.freq == 'daily':
+            data.to_csv(output_file) # daily data can be saved in one csv file
+        elif self.freq == 'tick':
+            rows_per_file = 500000
+            num_files = len(data) // rows_per_file + (1 if len(data) % rows_per_file != 0 else 0)
+            # save csv
+            for i in range(num_files):
+                start_row = i * rows_per_file
+                end_row = start_row + rows_per_file
+                data_subset = data.iloc[start_row:end_row, :] #0:499999, 500000:9999999, ...
+                # index of data should be datetime
+                data_subset.to_csv(output_file.split('.')[0]+'_'+data_subset.index[0].strftime('%Y%m%d')+f'_{i+1}.csv', index=False)
 
 
 
@@ -245,7 +255,7 @@ class ESpread(SpreadZoo):
             market_espread = pd.concat(espread_dfs, axis = 0)
 
         # save result
-        save_data(market_espread, output_file)
+        self.save_data(market_espread, output_file)
         
         return market_espread
 
@@ -352,7 +362,7 @@ class RSpread(SpreadZoo):
             market_rspread = pd.concat(rspread_dfs, axis = 0)
 
         # save result
-        save_data(market_rspread, output_file)
+        self.save_data(market_rspread, output_file)
         
         return market_rspread
 
@@ -429,7 +439,7 @@ class Adverse_Selection(RSpread):
             market_adv_selection = pd.concat(adverse_selection_dfs, axis = 0)
 
         # save result
-        save_data(market_adv_selection, output_file)
+        self.save_data(market_adv_selection, output_file)
         
         return market_adv_selection
     
@@ -532,7 +542,7 @@ class BASpread(SpreadZoo):
             market_baspread = pd.concat(baspread_dfs, axis = 0)
 
         # save result
-        save_data(market_baspread, output_file)
+        self.save_data(market_baspread, output_file)
         
         return market_baspread
         
