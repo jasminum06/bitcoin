@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-''' effective spread'''
+''' spot data process'''
 def process_spot_data(spot_data:pd.DataFrame, start_date = None):
     """Process data
     """
