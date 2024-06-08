@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import datetime as dt
 
-# TODO： code问题：save中间变量；有一些步骤有重复
 
 # internal import
 from utils import (process_spot_data, 
