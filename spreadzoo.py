@@ -122,7 +122,7 @@ class SpreadZoo:
         spread_level = spread.columns[level-1]
         
         if self.spread_name == 'bid-ask spread':
-            spreads = spreads[spread_level].values
+            spreads = spread[spread_level].values
             plot_info = {
                 "1":{
                 "X":dates,
