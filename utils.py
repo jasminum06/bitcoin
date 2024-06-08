@@ -43,7 +43,12 @@ def plot_axis(plot_info:dict, title, outputdir, file_type='png', fontsize=20):
         if plot_type == "bar":
             ax.bar(X, Y, color='orange', label=plot_info[key]["label"])
         elif plot_type == "line":
-            ax.plot(X, Y, color='royalblue', label=plot_info[key]["label"])
+            if len(X.shape) == 1:
+                ax.plot(X, Y, color='royalblue', label=plot_info[key]["label"])
+            elif len(X.shape) == 2:
+                for col in range(X.shape[1]):
+                    ax.plot(X[:, col], Y, label=plot_info[key]["label"][col], color=np.random.rand(3,))
+
         ax.grid(True)
         ax.set_ylabel(plot_info[key]["ylabel"], fontdict={"size":fontsize})
         ax.legend(plot_info[key]["legend"], loc='upper left', fontsize=fontsize)
@@ -60,3 +65,4 @@ def plot_axis(plot_info:dict, title, outputdir, file_type='png', fontsize=20):
         outputdir + title + "." + file_type,
     )
     plt.close()
+
