@@ -163,27 +163,53 @@ class SpreadZoo:
                 os.makedirs(output_dir)
             plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
             
-        
-        plot_info = {
-            "1":{
-            "X": dates,
-            "Y": spread.values*10000,
-            "type": "line",
-            "label": list(spread.columns)[:level],
-            "ylabel": 'espread(bps)',
-            "legend": list(spread.columns)[:level],
-            "xticks": dates[::5],
-            "xticklabels":[
-                    dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
-                ],
-                "axvline":pd.to_datetime(self.mark_date)
+    
+    def plot_all_spread(self, spread:pd.DataFrame, market_name: str, levels, output_dir='../figures/spread/'):
+        # levels: first 'levels' levels
+        spread = spread[spread.index>=pd.to_datetime(self.start_date)]
+        dates = spread.index
+        spreads = spread.iloc[:,:levels]
+        if self.spread_name == 'bid-ask spread':
+            plot_info = {
+                "1":{
+                "X": dates,
+                "Y": spreads.values,
+                "type": "line",
+                "label": list(spreads.columns)[:levels],
+                "ylabel": 'bid-ask spread',
+                "legend": list(spreads.columns)[:levels],
+                "xticks": dates[::5],
+                "xticklabels":[
+                        dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
+                    ],
+                    "axvline":pd.to_datetime(self.mark_date)
+                }
             }
-        }
-        title = 'first_'+str(level) + '_levels_'+ self.spread_name+ '(bps) for ' +market_name
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        plot_axis(plot_info, title, output_dir, file_type='png', fontsize = 20) 
-            
+            title = 'first_'+str(levels) + '_levels_bid-ask_spread for ' +market_name
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            plot_axis(plot_info, title, output_dir, file_type='png', fontsize = 20)
+        else:
+            plot_info = {
+                "1":{
+                "X": dates,
+                "Y": spreads.values*10000,
+                "type": "line",
+                "label": list(spreads.columns)[:levels],
+                "ylabel": self.spread_name,
+                "legend": list(spreads.columns)[:levels],
+                "xticks": dates[::5],
+                "xticklabels":[
+                        dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
+                    ],
+                    "axvline":pd.to_datetime(self.mark_date)
+                }
+            }
+            title = 'first_'+str(levels) + '_levels_'+self.spread_name+'(bps) for ' +market_name
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            plot_axis(plot_info, title, output_dir, file_type='png', fontsize = 20)
+                
             
     def save_data(self, data, output_file):
         # save data as csv file
