@@ -79,7 +79,7 @@ class SpreadZoo:
             values = row.values
             total = values.sum()
             weights = values / total
-            weighted_sum = (values * weights).sum() # TODO: 根据price加权还是根据amount加权？
+            weighted_sum = (values * weights).sum() # TODO: 根据amount加权
             return weighted_sum
         
         for i in iter([5,20]):    
@@ -163,6 +163,28 @@ class SpreadZoo:
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
+            
+        
+        plot_info = {
+            "1":{
+            "X": dates,
+            "Y": spread.values*10000,
+            "type": "line",
+            "label": list(spread.columns)[:level],
+            "ylabel": 'espread(bps)',
+            "legend": list(spread.columns)[:level],
+            "xticks": dates[::5],
+            "xticklabels":[
+                    dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
+                ],
+                "axvline":pd.to_datetime(self.mark_date)
+            }
+        }
+        title = 'first_'+str(level) + '_levels_'+ self.spread_name+ '(bps) for ' +market_name
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        plot_axis(plot_info, title, output_dir, file_type='png', fontsize = 20) 
+            
             
     def save_data(self, data, output_file):
         # save data as csv file

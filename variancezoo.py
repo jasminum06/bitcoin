@@ -202,7 +202,7 @@ class VarianceZoo():
             ],
             "axvline":pd.to_datetime(self.mark_date)}
         }
-        title = variance_level +' variance '+ self.type +' for ' + market_name
+        title = variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
