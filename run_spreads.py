@@ -14,8 +14,10 @@ for market_name in market_names:
                                 '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                 output_file=f'../result/daily/{market_name}/effective_spread.csv'
                                 )
-    for level in range(1,23):
+    for level in range(1,(level_number+1)):
         espread_daily.plot_spread(espread, market_name, level = level, output_dir=f'../figures/daily/vairance_std/{market_name}/')
+    for levels in iter([5, 10, 20, 50, 100]):
+        espread_daily.plot_all_spread(espread, market_name, levels = levels, output_dir=f'../figures/daily_all/vairance_std/{market_name}/')
     print('daily espread for '+market_name+' has been saved')
     
     # 2&3
@@ -31,9 +33,12 @@ for market_name in market_names:
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                            output_file=f'../result/daily/{market_name}/adverse_selection_'+str(delta_t)+'mins.csv'
                                          )
-        for level in range(1,23):
+        for level in range(1,(level_number+1)):
             rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/{str(delta_t)}_mins/')
             adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/{str(delta_t)}_mins/')
+        for levels in iter([5, 10, 20, 50, 100]):
+            rspread_daily.plot_spread(rspread, market_name, levels=levels, output_dir=f'../figures/daily_all/realized_spread/{market_name}/{str(delta_t)}_mins/')
+            adv_selection_daily.plot_spread(adv_selection, market_name, levels=levels, output_dir=f'../figures/daily_all/adverse_selection/{market_name}/{str(delta_t)}_mins/')
         
         print('daily rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
@@ -43,8 +48,10 @@ for market_name in market_names:
                                 '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                 output_file=f'../result/daily/{market_name}/bid_ask_spread.csv'
                                 )
-    for level in range(1,23):
-        baspread_daily.plot_spread(baspread, market_name, level = level, output_dir=f'../figures/daily/bid_ask_spread/{market_name}/')    
+    for level in range(1,(level_number+1)):
+        baspread_daily.plot_spread(baspread, market_name, level = level, output_dir=f'../figures/daily/bid_ask_spread/{market_name}/')
+    for levels in iter([5, 10, 20, 50, 100]):
+        baspread_daily.plot_spread(baspread, market_name, levels = levels, output_dir=f'../figures/daily_all/bid_ask_spread/{market_name}/')
     print('daily baspread for '+market_name+' has been saved')
 
 
@@ -61,8 +68,8 @@ for market_name in market_names:
                                 '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                 output_file=f'../result/tick/{market_name}/effective_spread.csv'
                                 )
-    for level in range(1,23):
-        espread_tick.plot_spread(espread, market_name, level = level, output_dir=f'../figures/tick/effective_spread/{market_name}/')    
+    # for level in range(1,23):
+    #     espread_tick.plot_spread(espread, market_name, level = level, output_dir=f'../figures/tick/effective_spread/{market_name}/')    
     print('tick espread for '+market_name+' has been saved')
     
     # 2&3
@@ -78,9 +85,9 @@ for market_name in market_names:
                                           '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                            output_file=f'../result/tick/{market_name}/adverse_selection_'+str(delta_t)+'mins.csv'
                                          )
-        for level in range(1,23):
-            rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/{str(delta_t)}_mins/')
-            adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/{str(delta_t)}_mins/')
+        # for level in range(1,23):
+        #     rspread_tick.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/tick/realized_spread/{market_name}/{str(delta_t)}_mins/')
+        #     adv_selection_tick.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/tick/adverse_selection/{market_name}/{str(delta_t)}_mins/')
         
         print('tick rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
@@ -90,6 +97,6 @@ for market_name in market_names:
                                 '../data/market_order_json/'+market_name+'-spot_{month}.json',
                                 output_file=f'../result/tick/{market_name}/bid_ask_spread.csv'
                                 )
-    for level in range(1,23):
-        baspread_tick.plot_spread(baspread, market_name, level = level, output_dir=f'../figures/tick/bid_ask_spread/{market_name}/')    
+    # for level in range(1,23):
+    #     baspread_tick.plot_spread(baspread, market_name, level = level, output_dir=f'../figures/tick/bid_ask_spread/{market_name}/')    
     print('tick baspread for '+market_name+' has been saved')
