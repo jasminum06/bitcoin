@@ -37,8 +37,8 @@ for market_name in market_names:
             rspread_daily.plot_spread(rspread, market_name, level=level, output_dir=f'../figures/daily/realized_spread/{market_name}/{str(delta_t)}_mins/')
             adv_selection_daily.plot_spread(adv_selection, market_name, level=level, output_dir=f'../figures/daily/adverse_selection/{market_name}/{str(delta_t)}_mins/')
         for levels in iter([5, 10, 20, 50, 100]):
-            rspread_daily.plot_spread(rspread, market_name, levels=levels, output_dir=f'../figures/daily_all/realized_spread/{market_name}/{str(delta_t)}_mins/')
-            adv_selection_daily.plot_spread(adv_selection, market_name, levels=levels, output_dir=f'../figures/daily_all/adverse_selection/{market_name}/{str(delta_t)}_mins/')
+            rspread_daily.plot_all_spread(rspread, market_name, levels=levels, output_dir=f'../figures/daily_all/realized_spread/{market_name}/{str(delta_t)}_mins/')
+            adv_selection_daily.plot_all_spread(adv_selection, market_name, levels=levels, output_dir=f'../figures/daily_all/adverse_selection/{market_name}/{str(delta_t)}_mins/')
         
         print('daily rspread and adverse selection for '+market_name+ 'with dt = '+str(delta_t)+'mins has been saved')
     
@@ -51,7 +51,7 @@ for market_name in market_names:
     for level in range(1,(level_number+1)):
         baspread_daily.plot_spread(baspread, market_name, level = level, output_dir=f'../figures/daily/bid_ask_spread/{market_name}/')
     for levels in iter([5, 10, 20, 50, 100]):
-        baspread_daily.plot_spread(baspread, market_name, levels = levels, output_dir=f'../figures/daily_all/bid_ask_spread/{market_name}/')
+        baspread_daily.plot_all_spread(baspread, market_name, levels = levels, output_dir=f'../figures/daily_all/bid_ask_spread/{market_name}/')
     print('daily baspread for '+market_name+' has been saved')
 
 
