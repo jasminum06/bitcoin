@@ -15,9 +15,9 @@ for market_name in market_names:
                                 output_file=f'../result/daily/{market_name}/effective_spread.csv'
                                 )
     for level in range(1,(level_number+1)):
-        espread_daily.plot_spread(espread, market_name, level = level, output_dir=f'../figures/daily/vairance_std/{market_name}/')
+        espread_daily.plot_spread(espread, market_name, level = level, output_dir=f'../figures/daily/effective_spread/{market_name}/')
     for levels in iter([5, 10, 20, 50, 100]):
-        espread_daily.plot_all_spread(espread, market_name, levels = levels, output_dir=f'../figures/daily_all/vairance_std/{market_name}/')
+        espread_daily.plot_all_spread(espread, market_name, levels = levels, output_dir=f'../figures/daily_all/effective_spread/{market_name}/')
     print('daily espread for '+market_name+' has been saved')
     
     # 2&3
