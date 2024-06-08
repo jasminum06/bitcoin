@@ -152,30 +152,30 @@ class VarianceZoo():
                 ['weighted_5_levels_midquote_return', 'weighted_20_levels_midquote_return']
             # compounded daily return
             if self.freq == 'daily':
-                period_1_return = ((log_return+1).resample('D').comprod())-1
-                period_1_variance = period_1_return.apply(rolling_std_cum)
-                period_q_return = ((period_1_return+1).rolling(window = self.q).comprod())-1
-                period_q_variance = period_q_return.apply(rolling_std_cum)
+                period_1_return = (log_return).resample('D').apply(lambda x: (x + 1).prod() - 1)
+                period_1_variance = rolling_std_cum(period_1_return)
+                period_q_return = (period_1_return+1).rolling(window=self.q).apply(np.prod, raw=True) - 1
+                period_q_variance = rolling_std_cum(period_q_return)
                 VR = (period_q_variance/period_1_variance).dropna(axis = 0)
             
             elif self.freq == 'tick':
-                period_1_return = ((log_return+1).resample('1min').comprod())-1 # 1min as benchmark
-                period_1_variance = period_1_return.apply(rolling_std_cum)
-                period_q_return = (period_1_return+1).rolling(window = self.q).comprod()-1
-                period_q_variance = period_q_return.apply(rolling_std_cum)
+                period_1_return = (log_return).resample('1min').apply(lambda x: (x + 1).prod() - 1) # 1min as benchmark
+                period_1_variance = rolling_std_cum(period_1_return)
+                period_q_return = (period_1_return+1).rolling(window=self.q).apply(np.prod, raw=True) - 1
+                period_q_variance = rolling_std_cum(period_q_return)
                 VR = (period_q_variance/period_1_variance).dropna(axis = 0)
                 
-        # elif self.data_type == 'price':
-        #     # prices by daily
-        #     if self.freq == 'daily':
-        #         period_1_variance = merged_data.resample('D').std()
-        #         period_q_variance = merged_data.resample('D').apply(rolling_std_cum)
-        #         VR = period_q_variance/period_1_variance
-        #     elif self.freq == 'tick':
-        #         period_1_variance = merged_data.resample('1min').std()
-                
-        #         period_q_variance = merged_data.resample('1min').apply(rolling_std_cum)
-        #         VR = period_q_variance/period_1_variance
+        elif self.data_type == 'price':
+            # prices by daily
+            if self.freq == 'daily':
+                # period_1_variance = merged_data.resample('D').std()
+                # period_q_variance = merged_data.resample('D').apply(rolling_std_cum)
+                # VR = period_q_variance/period_1_variance
+                pass
+            elif self.freq == 'tick':
+                period_1_variance = merged_data.resample('1min').head(1).resample('D').std()
+                period_q_variance = merged_data.resample(str(self.q) + 'min').head(1).resample('D').std()
+                VR = period_q_variance/period_1_variance
         return VR
     
                 
@@ -207,7 +207,32 @@ class VarianceZoo():
             os.makedirs(output_dir)
         plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
 
-    
+    def plot_all_variance(self, variance_data:pd.DataFrame, market_name: str, levels, output_dir='../figures/spread/'):
+        
+        variance_data = variance_data[variance_data.index>=pd.to_datetime(self.start_date)]
+        dates = variance_data.index
+        variance_data = variance_data.iloc[:, :(levels+1)]
+        
+        plot_info = {
+            "1":{
+            "X":dates,
+            "Y":variance_data.values,
+            "type":"line",
+            "label": list(variance_data.columns),
+            "ylabel": 'variance '+ self.type,
+            "legend":list(variance_data.columns),
+            "xticks":dates[::5],
+            "xticklabels":[
+                dt.datetime.strftime(date, '%Y-%m-%d') for date in dates[::5]
+            ],
+            "axvline":pd.to_datetime(self.mark_date)}
+        }
+        title = 'first ' +str(levels)+' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
+        
+        
     def integrate_singlemonth_variance(self, month_spot, json_file):
         
         date_quote_dict = self.load_from_json(json_file)
