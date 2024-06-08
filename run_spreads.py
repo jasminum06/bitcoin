@@ -2,7 +2,7 @@ from spreadzoo import ESpread, RSpread, Adverse_Selection, BASpread
 
 start_date = '20231101'
 mark_date = '20240111'
-level_number = 20
+level_number = 100
 market_names = ['bitstamp-btc-usd','coinbase-btc-usd','coinbase-eth-usd','gemini-btc-usd']
 
 # daily results:
@@ -15,7 +15,7 @@ for market_name in market_names:
                                 output_file=f'../result/daily/{market_name}/effective_spread.csv'
                                 )
     for level in range(1,23):
-        espread_daily.plot_spread(espread, market_name, level = level, output_dir=f'../figures/daily/effective_spread/{market_name}/')    
+        espread_daily.plot_spread(espread, market_name, level = level, output_dir=f'../figures/daily/vairance_std/{market_name}/')
     print('daily espread for '+market_name+' has been saved')
     
     # 2&3
