@@ -229,7 +229,8 @@ class SpreadZoo:
                 end_row = start_row + rows_per_file
                 data_subset = data.iloc[start_row:end_row, :] #0:499999, 500000:9999999, ...
                 # index of data should be datetime
-                data_subset.to_csv(output_file.split('.')[0]+'_'+data_subset.index[0].strftime('%Y%m%d')+f'_{i+1}.csv', index=False)
+                
+                data_subset.to_csv(output_dir+self.spread_name+'_'+data_subset.index[0].strftime('%Y%m%d')+f'_{i+1}.csv')
 
 
 
