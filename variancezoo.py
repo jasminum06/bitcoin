@@ -33,13 +33,13 @@ class VarianceZoo():
         if self.freq == 'daily':
             data.to_csv(output_file) # daily data can be saved in one csv file
         elif self.freq == 'tick':
-            rows_per_file = 500000
+            rows_per_file = 50000
             num_files = len(data) // rows_per_file + (1 if len(data) % rows_per_file != 0 else 0)
             # save csv
             for i in range(num_files):
                 start_row = i * rows_per_file
                 end_row = start_row + rows_per_file
-                data_subset = data.iloc[start_row:end_row, :] #0:499999, 500000:9999999, ...
+                data_subset = data.iloc[start_row:end_row, :] #0:49999, 50000:99999, ...
                 # index of data should be datetime
                 data_subset.to_csv(output_file.split('.')[0]+'_'+data_subset.index[0].strftime('%Y%m%d')+f'_{i+1}.csv', index=False)
                 
