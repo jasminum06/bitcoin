@@ -202,7 +202,13 @@ class VarianceZoo():
             ],
             "axvline":pd.to_datetime(self.mark_date)}
         }
-        title = variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+        if self.type == 'std':
+            title = variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+        elif self.type == 'ratio':
+            if self.freq == 'daily':
+                title = str(self.q)+'_day'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+            else:
+                title = str(self.q)+'_min'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
@@ -227,7 +233,13 @@ class VarianceZoo():
             ],
             "axvline":pd.to_datetime(self.mark_date)}
         }
-        title = 'first ' +str(levels)+' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+        if self.type == 'std':
+            title = 'first ' +str(levels)+' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+        elif self.type == 'ratio':
+            if self.freq == 'daily':
+                title = str(self.q)+'_day'+'first ' +str(levels)+' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+            else:
+                title = str(self.q)+'_min'+'first ' +str(levels)+' '+self.data_type +' variance '+ self.type + ' for ' + market_name
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
