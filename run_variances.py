@@ -21,7 +21,7 @@ for market_name in market_names:
     print('daily variance_std for '+market_name+' has been saved')
     
     variance_ratio_daily = VarianceZoo(start_date, mark_date, level_number, 'ratio', q, freq_daily, data_type)
-    variance_ratio = variance_ratio.run('../data/spot/'+market_name+'-spot_spot.csv', 
+    variance_ratio = variance_ratio_daily.run('../data/spot/'+market_name+'-spot_spot.csv', 
                     '../data/market_order_json/'+market_name+'-spot_{month}.json',
                     output_file=f'../result/daily/{market_name}/'+data_type+'_variance_ratio.csv')
     for level in range(level_number+1):

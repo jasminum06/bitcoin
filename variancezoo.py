@@ -283,7 +283,7 @@ class VarianceZoo():
                 date_variance = self.cal_VR(date_merge)  
             dates_variance.append(date_variance)
         
-        month_variance = pd.concat(dates_variance, axis=1)
+        month_variance = pd.concat(dates_variance, axis=0)
         
         
         return month_variance
@@ -307,7 +307,7 @@ class VarianceZoo():
                 continue
             variance_dfs.append(data)
             print('variance '+self.type +' for '+month+' has been calculated')
-            print("all done.")
+        print("all done.")
             
         variance_df = pd.concat(variance_dfs,axis = 0)
         
