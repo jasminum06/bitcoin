@@ -152,9 +152,9 @@ class VarianceZoo():
                 ['weighted_5_levels_midquote_return', 'weighted_20_levels_midquote_return']
             # compounded daily return
             if self.freq == 'daily':
-                period_1_return = (log_return).resample('D').apply(lambda x: (x + 1).prod() - 1)
+                period_1_return = (log_return).resample('D').apply(np.prod, raw=True)
                 period_1_variance = rolling_std_cum(period_1_return)
-                period_q_return = (period_1_return+1).rolling(window=self.q).apply(np.prod, raw=True) - 1
+                period_q_return = (period_1_return).rolling(window=self.q).apply(np.prod, raw=True)
                 period_q_variance = rolling_std_cum(period_q_return)
                 VR = (period_q_variance/period_1_variance).dropna(axis = 0)
             
@@ -172,13 +172,35 @@ class VarianceZoo():
                 # period_q_variance = merged_data.resample('D').apply(rolling_std_cum)
                 # VR = period_q_variance/period_1_variance
                 pass
-            elif self.freq == 'tick':
+            elif self.freq == 'tick': # qmin/1min
                 period_1_variance = merged_data.resample('1min').head(1).resample('D').std()
                 period_q_variance = merged_data.resample(str(self.q) + 'min').head(1).resample('D').std()
                 VR = period_q_variance/period_1_variance
+        VR.columns = ['level_{}'.format(k) for k in range(1+self.level_number)] + \
+                ['weighted_5_levels', 'weighted_20_levels']
         return VR
     
+    def cal_std(self, merged_data):
+        
+        merged_data = merged_data.drop(columns = ['side', 'amount'])
+        if self.data_type == 'return':
+            log_return = np.log(merged_data/merged_data.shift(1))
+            log_return.columns = ['return']+ ['level_{}_midquote_return'.format(k) for k in range(1,1+self.level_number)] + \
+                ['weighted_5_levels_midquote_return', 'weighted_20_levels_midquote_return']
+            if self.freq == 'daily':
+                Var_std = log_return.resample('D').std() # all the data in each day
+            elif self.freq == 'tick':
+                Var_std = log_return.resample(str(self.q)+'min').apply(np.prod, raw = True).resample('D').std() # larger range
+        elif self.data_type == 'price':
+            if self.freq == 'daily':
+                Var_std = merged_data.resample('D').std() # all the data in each day
+            elif self.freq == 'tick':
+                Var_std = merged_data.resample(str(self.q)+'min').head().resample('D').std() # larger range
                 
+        Var_std.columns = ['level_{}'.format(k) for k in range(1+self.level_number)] + \
+                ['weighted_5_levels', 'weighted_20_levels']
+        return Var_std
+                    
     def plot_variance(self, variance_data:pd.DataFrame, market_name: str, level = 0, output_dir='../figures/spread/'):
         # level: level = 0: spot
         # level = 1-20: market order
@@ -250,18 +272,19 @@ class VarianceZoo():
         date_quote_dict = self.load_from_json(json_file)
         if date_quote_dict is None:
             return None
-        dates_merge = []
+        dates_variance = []
         for date in month_spot['date'].unique():
             date_spot = month_spot[month_spot['date'] == date]
             date_quote = date_quote_dict[date]
             date_merge = self.match_spot_quote(date_spot, date_quote)
-            dates_merge.append(date_merge)
+            if self.type == 'std':
+                date_variance = date_merge.std()
+            elif self.type == 'ratio':
+                date_variance = self.cal_VR(date_merge)  
+            dates_variance.append(date_variance)
         
-        month_merge = pd.concat(dates_merge, axis=1)
-        if self.type == 'std':
-            month_variance = month_merge.std()
-        elif self.type == 'ratio':
-            month_variance = self.cal_VR(month_merge)  
+        month_variance = pd.concat(dates_variance, axis=1)
+        
         
         return month_variance
     
