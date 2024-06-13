@@ -152,16 +152,16 @@ class VarianceZoo():
                 ['weighted_5_levels_midquote_return', 'weighted_20_levels_midquote_return']
             # compounded daily return
             if self.freq == 'daily':
-                period_1_return = (log_return).resample('D').apply(np.prod, raw=True)
+                period_1_return = (log_return).resample('D').apply(np.prod)
                 period_1_variance = rolling_std_cum(period_1_return)
-                period_q_return = (period_1_return).rolling(window=self.q).apply(np.prod, raw=True)
+                period_q_return = (period_1_return).rolling(window=self.q).apply(np.prod)
                 period_q_variance = rolling_std_cum(period_q_return)
                 VR = (period_q_variance/period_1_variance).dropna(axis = 0)
             
             elif self.freq == 'tick':
-                period_1_return = (log_return).resample('1min').apply(lambda x: (x + 1).prod() - 1) # 1min as benchmark
+                period_1_return = (log_return).resample('1min').apply(np.prod) # 1min as benchmark
                 period_1_variance = rolling_std_cum(period_1_return)
-                period_q_return = (period_1_return+1).rolling(window=self.q).apply(np.prod, raw=True) - 1
+                period_q_return = period_1_return.rolling(window=self.q).apply(np.prod)
                 period_q_variance = rolling_std_cum(period_q_return)
                 VR = (period_q_variance/period_1_variance).dropna(axis = 0)
                 
