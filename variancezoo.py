@@ -152,18 +152,18 @@ class VarianceZoo():
                 ['weighted_5_levels_midquote_return', 'weighted_20_levels_midquote_return']
             # compounded daily return
             if self.freq == 'daily':
-                period_1_return = (log_return).resample('D').apply(np.prod)
+                period_1_return = (log_return).resample('D').apply(np.sum)
                 period_1_variance = rolling_std_cum(period_1_return)
-                period_q_return = (period_1_return).rolling(window=self.q).apply(np.prod)
+                period_q_return = (period_1_return).rolling(window=self.q).apply(np.sum)
                 period_q_variance = rolling_std_cum(period_q_return)
-                VR = (period_q_variance/period_1_variance).dropna(axis = 0)
+                VR = (period_q_variance/period_1_variance)
             
             elif self.freq == 'tick':
-                period_1_return = (log_return).resample('1min').apply(np.prod) # 1min as benchmark
+                period_1_return = (log_return).resample('1min').apply(np.sum) # 1min as benchmark
                 period_1_variance = rolling_std_cum(period_1_return)
-                period_q_return = period_1_return.rolling(window=self.q).apply(np.prod)
+                period_q_return = period_1_return.rolling(window=self.q).apply(np.sum)
                 period_q_variance = rolling_std_cum(period_q_return)
-                VR = (period_q_variance/period_1_variance).dropna(axis = 0)
+                VR = (period_q_variance/period_1_variance)
                 
         elif self.data_type == 'price':
             # prices by daily
@@ -190,7 +190,7 @@ class VarianceZoo():
             if self.freq == 'daily':
                 Var_std = log_return.resample('D').std() # all the data in each day
             elif self.freq == 'tick':
-                Var_std = log_return.resample(str(self.q)+'min').apply(np.prod, raw = True).resample('D').std() # larger range
+                Var_std = log_return.resample(str(self.q)+'min').apply(np.sum).resample('D').std() # larger range
         elif self.data_type == 'price':
             if self.freq == 'daily':
                 Var_std = merged_data.resample('D').std() # all the data in each day
@@ -225,12 +225,15 @@ class VarianceZoo():
             "axvline":pd.to_datetime(self.mark_date)}
         }
         if self.type == 'std':
-            title = variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+            if self.freq == 'daily':
+                title = 'daily_'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+            else:
+                title = str(self.q)+'_min_'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
         elif self.type == 'ratio':
             if self.freq == 'daily':
-                title = str(self.q)+'_day'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+                title = str(self.q)+'_day_'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
             else:
-                title = str(self.q)+'_min'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
+                title = str(self.q)+'_min_'+variance_level +' '+self.data_type +' variance '+ self.type + ' for ' + market_name
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         plot_axis(plot_info, title, output_dir, file_type='png', fontsize=20)
