@@ -142,7 +142,7 @@ class VarianceZoo():
             for i in range(len(df)):
                 window = df.iloc[0:i+1, :]
                 std = window.std()
-                rolling_std.extend(std)
+                rolling_std.append(std)
             return pd.DataFrame(rolling_std, index = df.index, columns = df.columns)
     
         if self.data_type == 'return':
