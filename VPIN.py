@@ -50,6 +50,9 @@ def volume_buckets(data:pd.DataFrame, V):
     interval_dfs = []
     for start, end in interval_index:
         interval_dfs.append(data.iloc[start:end + 1])
+    # time index list
+    time_start_index = []
+    time_end_index = []
     # deal with the first and last values in each bar
     for i in range(len(interval_dfs)):
         
@@ -58,8 +61,11 @@ def volume_buckets(data:pd.DataFrame, V):
         interval_df.loc[interval_df.index[-1], 'amount']= last_bar_amount[i]
         interval_df['price'] = interval_df['price'].astype(float)
         interval_dfs[i] = interval_df.set_index('time')
+        time_start_index = interval_dfs[i].index[0]
+        time_end_index = interval_dfs[i].index[-1]
         
-    return interval_dfs
+        
+    return interval_dfs, time_start_index, time_end_index
 
 # BVC classification
 def BVC_classification(interval_dfs: list):
@@ -225,27 +231,27 @@ for market_name in market_names:
     V = ((merged_data[['amount']].resample('D').sum()).mean()/k)[0]
     merged_data = merged_data.reset_index()
     
-    interval_dfs = volume_buckets(merged_data, V)
-    V_B_real, V_S_real = Real_classification(interval_dfs)
-    V_B_LR, V_S_LR = LR_classification(interval_dfs)
-    V_B_BVC, V_S_BVC = BVC_classification(interval_dfs)
+    interval_dfs, time_start_index, time_end_index = volume_buckets(merged_data, V)
+    # V_B_real, V_S_real = Real_classification(interval_dfs)
+    # V_B_LR, V_S_LR = LR_classification(interval_dfs)
+    # V_B_BVC, V_S_BVC = BVC_classification(interval_dfs)
     
-    bvc_accuracy = np.mean(classify_accuracy(V_B_BVC, V_S_BVC, V_B_real, V_S_real))
-    lr_accuracy = np.mean(classify_accuracy(V_B_LR, V_S_LR, V_B_real, V_S_real))
-    print('LR accuracy for '+market_name +' is ' + str(lr_accuracy)+
-          ', BVC accuracy is '+ str(bvc_accuracy))
+    # bvc_accuracy = np.mean(classify_accuracy(V_B_BVC, V_S_BVC, V_B_real, V_S_real))
+    # lr_accuracy = np.mean(classify_accuracy(V_B_LR, V_S_LR, V_B_real, V_S_real))
+    # print('LR accuracy for '+market_name +' is ' + str(lr_accuracy)+
+    #       ', BVC accuracy is '+ str(bvc_accuracy))
     
-    VPIN_real = cal_VPIN(cal_OI(V_B_real, V_S_real),V, N)
-    VPIN_lr = cal_VPIN(cal_OI(V_B_LR, V_S_LR), V, N)
-    VPIN_bvc = cal_VPIN(cal_OI(V_B_BVC, V_S_BVC), V, N)
-    VPIN_df = pd.DataFrame()
-    VPIN_df['VPIN_real'] = VPIN_real
-    VPIN_df['VPIN_LR'] = VPIN_lr
-    VPIN_df['VPIN_BVC'] = VPIN_bvc
+    # VPIN_real = cal_VPIN(cal_OI(V_B_real, V_S_real),V, N)
+    # VPIN_lr = cal_VPIN(cal_OI(V_B_LR, V_S_LR), V, N)
+    # VPIN_bvc = cal_VPIN(cal_OI(V_B_BVC, V_S_BVC), V, N)
+    # VPIN_df = pd.DataFrame()
+    # VPIN_df['VPIN_real'] = VPIN_real
+    # VPIN_df['VPIN_LR'] = VPIN_lr
+    # VPIN_df['VPIN_BVC'] = VPIN_bvc
     
-    file_path = '../result/'+market_name+'/VPIN.csv'
-    VPIN_df.to_csv(file_path)
-    print('VPIN for '+market_name+' has been saved')
+    # file_path = '../result/'+market_name+'/VPIN.csv'
+    # VPIN_df.to_csv(file_path)
+    # print('VPIN for '+market_name+' has been saved')
         
     
 
